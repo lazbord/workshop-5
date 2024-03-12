@@ -3,6 +3,13 @@ import express from "express";
 import { BASE_NODE_PORT } from "../config";
 import { Value } from "../types";
 
+type NodeState = {
+  killed: boolean;
+  x: 0 | 1 | "?" | null;
+  decided: boolean | null;
+  k: number | null;
+};
+
 export async function node(
   nodeId: number, // the ID of the node
   N: number, // total number of nodes in the network
@@ -16,9 +23,22 @@ export async function node(
   node.use(express.json());
   node.use(bodyParser.json());
 
+  let currentState: NodeState = {
+    killed: false,
+    x: initialValue,
+    decided: false,
+    k: null
+  };
+
   // TODO implement this
   // this route allows retrieving the current status of the node
-  // node.get("/status", (req, res) => {});
+  node.get("/status", (req, res) => {
+    if (isFaulty) {
+      res.status(500).send("faulty");
+    } else {
+      res.status(200).send("live");
+    }
+  });
 
   // TODO implement this
   // this route allows the node to receive messages from other nodes
@@ -34,7 +54,20 @@ export async function node(
 
   // TODO implement this
   // get the current state of a node
-  // node.get("/getState", (req, res) => {});
+  // Route to get the current state of the node
+  // Route to get the current state of the node
+  node.get("/getState", (req, res) => {
+    if (isFaulty) {
+      currentState = {
+        killed: true,
+        x: null,
+        decided: null,
+        k: null
+      };
+    }
+    res.status(200).send({ x: currentState.x, k: currentState.k, isFaulty, decided: currentState.decided });
+  });
+
 
   // start the server
   const server = node.listen(BASE_NODE_PORT + nodeId, async () => {
